@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14532d">
+  <meta name="description" content="Motswala Family Bank — a virtual family rewards and savings system.">
+  <title>Motswala Family Bank</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="data:,">
+  <style>
+    :root{color-scheme:light;--green:#14532d;--green2:#166534;--gold:#eabf55;--ink:#183326;--muted:#64756b;--paper:#f5f8f3;--white:#fff}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    .top{background:linear-gradient(135deg,#0f3d25,#17613a);color:white;padding:26px 20px 54px;border-bottom:5px solid var(--gold)}
+    .wrap{width:min(100% - 32px,760px);margin:auto}.brand{display:flex;align-items:center;gap:12px}.mark{width:46px;height:46px;border-radius:15px;background:var(--gold);color:var(--green);display:grid;place-items:center;font-weight:900;font-size:22px}
+    h1{font-size:clamp(23px,5vw,32px);margin:0;letter-spacing:-.5px}.tag{margin:5px 0 0;color:#dcebdd;font-size:14px}
+    main{margin-top:-30px;padding-bottom:40px}.panel{background:white;border:1px solid #e1e9df;border-radius:20px;padding:24px;box-shadow:0 12px 35px #153b2510}
+    .pill{display:inline-flex;background:#edf6ed;color:#17613a;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:750;letter-spacing:.3px}
+    h2{font-size:21px;margin:14px 0 8px}.intro{color:var(--muted);margin:0 0 20px}.notice{background:#fff8e7;border:1px solid #f2dfaa;border-radius:13px;padding:14px 15px;color:#654b14;font-size:14px}
+    .steps{display:grid;gap:12px;margin:20px 0}.step{display:flex;gap:12px;align-items:flex-start}.num{flex:none;width:28px;height:28px;border-radius:50%;background:#e9f2e8;color:var(--green);display:grid;place-items:center;font-weight:800;font-size:13px}.step p{margin:2px 0;color:#526258;font-size:14px}
+    footer{text-align:center;color:#718076;font-size:12px;padding:20px}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap">
+    <div class="brand"><div class="mark">M</div><div><h1>Motswala Family Bank</h1><p class="tag">Small efforts. Big family rewards.</p></div></div>
+  </div></header>
+  <main class="wrap">
+    <section class="panel">
+      <span class="pill">FAMILY REWARDS • MR</span>
+      <h2>Welcome to your family bank</h2>
+      <p class="intro">A private family rewards and savings space where children can earn Motswala Rands (MR), track their progress and work towards goals.</p>
+      <div class="notice" id="setup-message"><strong>Setup in progress.</strong><br>We are preparing the secure connection to your family database. Login and wallet features will be enabled after the Supabase configuration and security checks are complete.</div>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><p><strong>Earn MR</strong><br>Complete family-approved chores and activities.</p></div>
+        <div class="step"><span class="num">2</span><p><strong>Save towards goals</strong><br>Watch savings grow with every approved reward.</p></div>
+        <div class="step"><span class="num">3</span><p><strong>Spend responsibly</strong><br>Use your virtual rewards in the family reward shop.</p></div>
+      </div>
+      <p class="intro" style="font-size:13px;margin-bottom:0">This is a virtual family rewards system. MR is not real money and this is not a bank account.</p>
+    </section>
+  </main>
+  <footer>Motswala Family Bank · From our family to yours</footer>
+  <script src="./config.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
