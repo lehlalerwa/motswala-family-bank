@@ -1,0 +1,10 @@
+{
+  "name": "Motswala Family Bank",
+  "short_name": "Motswala Bank",
+  "description": "A virtual family rewards and savings system.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f8f3",
+  "theme_color": "#14532d"
+}
