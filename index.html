@@ -1,223 +1,135 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#14532d">
-  <meta name="description" content="Motswala Family Bank — a virtual family rewards and savings system.">
-  <title>Motswala Family Bank</title>
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" href="data:,">
-  <style>
-    :root{color-scheme:light;--green:#14532d;--green2:#166534;--gold:#eabf55;--ink:#183326;--muted:#64756b;--paper:#f5f8f3;--white:#fff;--line:#e1e9df}
-    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    .top{background:linear-gradient(135deg,#0f3d25,#17613a);color:white;padding:26px 20px 54px;border-bottom:5px solid var(--gold)}
-    .wrap{width:min(100% - 32px,760px);margin:auto}.brand{display:flex;align-items:center;gap:12px}.mark{width:46px;height:46px;border-radius:15px;background:var(--gold);color:var(--green);display:grid;place-items:center;font-weight:900;font-size:22px}
-    h1{font-size:clamp(23px,5vw,32px);margin:0;letter-spacing:-.5px}.tag{margin:5px 0 0;color:#dcebdd;font-size:14px}
-    main{margin-top:-30px;padding-bottom:40px}.panel{background:white;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 12px 35px #153b2510}
-    .pill{display:inline-flex;background:#edf6ed;color:#17613a;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:750;letter-spacing:.3px}
-    h2{font-size:21px;margin:14px 0 8px}.intro{color:var(--muted);margin:0 0 20px}
-    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:20px 0 18px;background:#f0f4ef;padding:5px;border-radius:13px}
-    .tab{border:0;border-radius:10px;padding:11px 8px;background:transparent;color:#53645a;font-weight:750;font-size:14px;cursor:pointer}
-    .tab.active{background:white;color:var(--green);box-shadow:0 2px 8px #153b2512}
-    label{display:block;font-size:13px;font-weight:750;margin:14px 0 6px}
-    input{width:100%;border:1px solid #cfdacf;border-radius:11px;padding:13px 12px;font:inherit;color:var(--ink);background:white}
-    input:focus{outline:3px solid #d9ead9;border-color:var(--green2)}
-    .hint{font-size:12px;color:var(--muted);margin:6px 0 0}
-    .primary{width:100%;border:0;border-radius:12px;background:var(--green);color:white;padding:14px;font:inherit;font-weight:800;margin-top:20px;cursor:pointer}
-    .primary:disabled{opacity:.65;cursor:wait}
-    .message{display:none;margin-top:14px;border-radius:11px;padding:11px 13px;font-size:13px}
-    .message.error{display:block;background:#fff0ef;color:#9b2520;border:1px solid #f2cbc7}
-    .message.success{display:block;background:#edf7ed;color:#17613a;border:1px solid #cfe5cf}
-    .notice{background:#fff8e7;border:1px solid #f2dfaa;border-radius:13px;padding:12px 14px;color:#654b14;font-size:12px;margin-top:18px}
-    .dashboard{text-align:center}.avatar{width:64px;height:64px;margin:12px auto;border-radius:22px;background:#edf6ed;color:var(--green);display:grid;place-items:center;font-size:27px;font-weight:900}
-    .secondary{border:1px solid #cfdacf;border-radius:11px;background:white;color:var(--green);padding:11px 16px;font:inherit;font-weight:750;cursor:pointer;margin-top:20px}
-    footer{text-align:center;color:#718076;font-size:12px;padding:20px}
-    @media(max-width:420px){.panel{padding:19px}.top{padding-top:22px}}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#14532d">
+<meta name="description" content="Motswala Family Bank — a virtual family rewards and savings system."><title>Motswala Family Bank</title>
+<link rel="manifest" href="./manifest.json"><link rel="icon" href="data:,">
+<style>
+:root{color-scheme:light;--green:#14532d;--green2:#166534;--gold:#eabf55;--ink:#183326;--muted:#64756b;--paper:#f5f8f3;--line:#e1e9df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.top{background:linear-gradient(135deg,#0f3d25,#17613a);color:white;padding:23px 18px 48px;border-bottom:5px solid var(--gold)}
+.wrap{width:min(100% - 28px,820px);margin:auto}.brand{display:flex;align-items:center;gap:12px}.mark{width:44px;height:44px;border-radius:14px;background:var(--gold);color:var(--green);display:grid;place-items:center;font-weight:900;font-size:22px}
+h1{font-size:clamp(22px,5vw,30px);margin:0}.tag{margin:4px 0 0;color:#dcebdd;font-size:13px}main{margin-top:-27px;padding-bottom:34px}
+.panel{background:white;border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 10px 28px #153b250c}
+.pill{display:inline-flex;background:#edf6ed;color:#17613a;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;letter-spacing:.3px}
+h2{font-size:20px;margin:12px 0 6px}h3{font-size:16px;margin:0 0 10px}.muted{color:var(--muted)}.small{font-size:12px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:18px 0;background:#f0f4ef;padding:5px;border-radius:12px}
+.tab{border:0;border-radius:9px;padding:10px;background:transparent;color:#53645a;font-weight:750;cursor:pointer}.tab.active{background:white;color:var(--green);box-shadow:0 2px 8px #153b2512}
+label{display:block;font-size:13px;font-weight:750;margin:12px 0 5px}input,textarea{width:100%;border:1px solid #cfdacf;border-radius:10px;padding:11px 12px;font:inherit;color:var(--ink);background:white}textarea{min-height:68px;resize:vertical}
+input:focus,textarea:focus{outline:3px solid #d9ead9;border-color:var(--green2)}.primary,.secondary,.danger{border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:800;cursor:pointer}.primary{background:var(--green);color:white;width:100%;margin-top:15px}.secondary{background:#edf6ed;color:var(--green)}.danger{background:#fff0ef;color:#9b2520}.primary:disabled,.secondary:disabled,.danger:disabled{opacity:.6;cursor:wait}
+.message{display:none;margin-top:12px;border-radius:10px;padding:10px 12px;font-size:13px}.message.error{display:block;background:#fff0ef;color:#9b2520;border:1px solid #f2cbc7}.message.success{display:block;background:#edf7ed;color:#17613a;border:1px solid #cfe5cf}
+.notice{background:#fff8e7;border:1px solid #f2dfaa;border-radius:12px;padding:11px 13px;color:#654b14;font-size:12px;margin-top:14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.stack{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:9px}.item p{margin:4px 0}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}.actions button{font-size:13px;padding:8px 11px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:15px 0}.stat{background:#f1f6ef;border-radius:13px;padding:13px}.stat strong{display:block;font-size:22px;color:var(--green)}.stat span{font-size:12px;color:var(--muted)}
+.balance{font-size:34px;font-weight:900;color:var(--green);letter-spacing:-1px}.section{margin-top:18px}.empty{color:var(--muted);font-size:13px;padding:12px 0}
+.avatar{width:55px;height:55px;border-radius:18px;background:#edf6ed;color:var(--green);display:grid;place-items:center;font-size:24px;font-weight:900;margin:12px auto 4px}
+footer{text-align:center;color:#718076;font-size:12px;padding:15px}
+[hidden]{display:none!important}
+@media(max-width:440px){.panel{padding:16px}.top{padding-top:20px}.stats{gap:8px}.stat{padding:10px}.stat strong{font-size:20px}}
+</style>
 </head>
 <body>
-  <header class="top"><div class="wrap">
-    <div class="brand"><div class="mark">M</div><div><h1>Motswala Family Bank</h1><p class="tag">Small efforts. Big family rewards.</p></div></div>
-  </div></header>
-  <main class="wrap">
-    <section class="panel" id="login-panel">
-      <span class="pill">FAMILY REWARDS • MR</span>
-      <h2>Welcome to your family bank</h2>
-      <p class="intro">Sign in to view your family rewards and savings space.</p>
-      <div class="tabs" role="tablist" aria-label="Choose account type">
-        <button class="tab active" id="parent-tab" type="button" role="tab" aria-selected="true">Parent</button>
-        <button class="tab" id="child-tab" type="button" role="tab" aria-selected="false">Child</button>
-      </div>
-      <form id="parent-form">
-        <label for="parent-email">Parent email</label>
-        <input id="parent-email" type="email" autocomplete="username" placeholder="Enter parent email" required>
-        <label for="parent-password">Password</label>
-        <input id="parent-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
-        <button class="primary" type="submit">Sign in as parent</button>
-      </form>
-      <form id="child-form" hidden>
-        <label for="child-username">Child username</label>
-        <input id="child-username" type="text" autocomplete="username" placeholder="e.g. ditheto" autocapitalize="none" required>
-        <label for="child-pin">Six-digit PIN</label>
-        <input id="child-pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="current-password" placeholder="Enter six-digit PIN" required>
-        <p class="hint">Use the username assigned to you. Your PIN is private.</p>
-        <button class="primary" type="submit">Sign in as child</button>
-      </form>
-      <div id="login-message" class="message" role="status" aria-live="polite"></div>
-      <div class="notice">Motswala Rands (MR) are virtual family rewards, not real money. For now, child PINs are temporary account passwords. Use this only on trusted devices and do not share your PIN.</div>
-    </section>
+<header class="top"><div class="wrap"><div class="brand"><div class="mark">M</div><div><h1>Motswala Family Bank</h1><p class="tag">Small efforts. Big family rewards.</p></div></div></div></header>
+<main class="wrap">
+<section class="panel" id="login-panel">
+<span class="pill">FAMILY REWARDS • MR</span><h2>Welcome to your family bank</h2><p class="muted">Sign in to view your family rewards and savings space.</p>
+<div class="tabs"><button class="tab active" id="parent-tab" type="button">Parent</button><button class="tab" id="child-tab" type="button">Child</button></div>
+<form id="parent-form"><label for="parent-email">Parent email</label><input id="parent-email" type="email" autocomplete="username" placeholder="Enter parent email" required><label for="parent-password">Password</label><input id="parent-password" type="password" autocomplete="current-password" placeholder="Enter password" required><button class="primary" type="submit">Sign in as parent</button></form>
+<form id="child-form" hidden><label for="child-username">Child username</label><input id="child-username" autocomplete="username" placeholder="e.g. ditheto" autocapitalize="none" required><label for="child-pin">Six-digit PIN</label><input id="child-pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="current-password" placeholder="Enter six-digit PIN" required><p class="small muted">Your PIN is private. Do not share it.</p><button class="primary" type="submit">Sign in as child</button></form>
+<div id="login-message" class="message" role="status" aria-live="polite"></div>
+<div class="notice">MR are virtual family rewards, not real money. Child PINs currently act as account passwords; use trusted devices only.</div>
+</section>
 
-    <section class="panel dashboard" id="dashboard-panel" hidden>
-      <span class="pill">MOTSWALA FAMILY BANK</span>
-      <div class="avatar" id="profile-avatar">M</div>
-      <h2 id="welcome-name">Welcome</h2>
-      <p class="intro" id="welcome-role">Your account is connected.</p>
-      <p class="intro">Your family bank dashboard is the next feature we will build.</p>
-      <button class="secondary" id="sign-out" type="button">Sign out</button>
-    </section>
-  </main>
-  <footer>Motswala Family Bank · From our family to yours</footer>
+<section class="panel" id="dashboard" hidden>
+<div class="row"><span class="pill">MOTSWALA FAMILY BANK</span><button class="secondary" id="sign-out" type="button">Sign out</button></div>
+<div class="avatar" id="avatar">M</div><h2 id="welcome" style="text-align:center">Welcome</h2><p id="role-label" class="muted" style="text-align:center;margin-top:0"></p>
+<div id="parent-view" hidden>
+<div class="stats"><div class="stat"><strong id="child-count">0</strong><span>Children</span></div><div class="stat"><strong id="pending-count">0</strong><span>Pending approvals</span></div></div>
+<div class="section"><h3>Family members</h3><div id="family-list" class="stack"></div></div>
+<div class="section"><h3>Create a chore</h3><form id="chore-form"><label for="chore-title">Chore name</label><input id="chore-title" maxlength="80" placeholder="e.g. Make your bed" required><label for="chore-description">Description (optional)</label><textarea id="chore-description" maxlength="250" placeholder="What needs to be done?"></textarea><label for="chore-reward">Reward (MR)</label><input id="chore-reward" type="number" min="1" step="0.5" placeholder="e.g. 5" required><button class="primary" type="submit">Add chore</button></form><div id="chore-message" class="message"></div></div>
+<div class="section"><h3>Active chores</h3><div id="parent-chores"></div></div>
+<div class="section"><h3>Chore approvals</h3><p class="small muted">Review completed chores submitted by the children.</p><div id="approval-list"></div><div id="approval-message" class="message"></div></div>
+</div>
 
-  <script src="./config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    (function () {
-      const config = window.MOTSWALA_CONFIG;
-      const loginPanel = document.getElementById('login-panel');
-      const dashboardPanel = document.getElementById('dashboard-panel');
-      const parentForm = document.getElementById('parent-form');
-      const childForm = document.getElementById('child-form');
-      const parentTab = document.getElementById('parent-tab');
-      const childTab = document.getElementById('child-tab');
-      const message = document.getElementById('login-message');
-      const signOutButton = document.getElementById('sign-out');
-      let supabaseClient = null;
-
-      const childAccounts = {
-        mahlogonolo: 'lehlalerwamj+mahlogonolo@gmail.com',
-        ditheto: 'lehlalerwamj+ditheto@gmail.com',
-        rorisang: 'lehlalerwamj+rorisang@gmail.com'
-      };
-
-      function showMessage(text, type) {
-        message.textContent = text;
-        message.className = 'message ' + type;
-      }
-
-      function selectTab(which) {
-        const parentSelected = which === 'parent';
-        parentForm.hidden = !parentSelected;
-        childForm.hidden = parentSelected;
-        parentTab.classList.toggle('active', parentSelected);
-        childTab.classList.toggle('active', !parentSelected);
-        parentTab.setAttribute('aria-selected', String(parentSelected));
-        childTab.setAttribute('aria-selected', String(!parentSelected));
-        message.className = 'message';
-        message.textContent = '';
-      }
-
-      parentTab.addEventListener('click', function () { selectTab('parent'); });
-      childTab.addEventListener('click', function () { selectTab('child'); });
-
-      function setBusy(form, busy) {
-        const button = form.querySelector('button[type="submit"]');
-        button.disabled = busy;
-        button.textContent = busy ? 'Signing in…' : (form === parentForm ? 'Sign in as parent' : 'Sign in as child');
-      }
-
-      async function showProfile(user) {
-        const result = await supabaseClient
-          .from('family_members')
-          .select('id, display_name, role')
-          .eq('auth_user_id', user.id)
-          .single();
-
-        if (result.error || !result.data) {
-          await supabaseClient.auth.signOut();
-          throw new Error('Your account is signed in, but its family profile could not be found. Please contact the parent administrator.');
-        }
-
-        loginPanel.hidden = true;
-        dashboardPanel.hidden = false;
-        document.getElementById('welcome-name').textContent = 'Welcome, ' + result.data.display_name;
-        document.getElementById('welcome-role').textContent = result.data.role === 'parent' ? 'Parent administrator' : 'Child account';
-        document.getElementById('profile-avatar').textContent = result.data.display_name.trim().charAt(0).toUpperCase();
-      }
-
-      async function handleLogin(form, email, password) {
-        setBusy(form, true);
-        message.className = 'message';
-        try {
-          const result = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
-          if (result.error) throw result.error;
-          await showProfile(result.data.user);
-        } catch (error) {
-          showMessage(error.message || 'Sign-in failed. Check your details and try again.', 'error');
-        } finally {
-          setBusy(form, false);
-        }
-      }
-
-      parentForm.addEventListener('submit', function (event) {
-        event.preventDefault();
-        const email = document.getElementById('parent-email').value.trim();
-        const password = document.getElementById('parent-password').value;
-        handleLogin(parentForm, email, password);
-      });
-
-      childForm.addEventListener('submit', function (event) {
-        event.preventDefault();
-        const username = document.getElementById('child-username').value.trim().toLowerCase();
-        const pin = document.getElementById('child-pin').value;
-        const email = childAccounts[username];
-        if (!email) {
-          showMessage('Username not recognised. Please check the spelling.', 'error');
-          return;
-        }
-        if (!/^[0-9]{6}$/.test(pin)) {
-          showMessage('Please enter your six-digit PIN.', 'error');
-          return;
-        }
-        handleLogin(childForm, email, pin);
-        document.getElementById('child-pin').value = '';
-      });
-
-      signOutButton.addEventListener('click', async function () {
-        signOutButton.disabled = true;
-        await supabaseClient.auth.signOut();
-        dashboardPanel.hidden = true;
-        loginPanel.hidden = false;
-        parentForm.reset();
-        childForm.reset();
-        selectTab('parent');
-        signOutButton.disabled = false;
-      });
-
-      async function start() {
-        if (!config || !config.supabaseUrl || !config.supabaseAnonKey || !window.supabase) {
-          showMessage('The app could not load its Supabase connection. Please refresh or contact the parent administrator.', 'error');
-          return;
-        }
-        supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-        const sessionResult = await supabaseClient.auth.getSession();
-        if (sessionResult.data && sessionResult.data.session) {
-          try {
-            await showProfile(sessionResult.data.session.user);
-          } catch (error) {
-            showMessage(error.message, 'error');
-          }
-        }
-      }
-
-      start().catch(function () {
-        showMessage('Unable to start the app. Please refresh and try again.', 'error');
-      });
-    })();
-
-    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
-    }
-  </script>
-</body>
-</html>
+<div id="child-view" hidden>
+<div class="stat"><span>YOUR AVAILABLE BALANCE</span><div class="balance"><span id="child-balance">0.00</span> <span style="font-size:16px">MR</span></div></div>
+<div class="section"><h3>Available chores</h3><div id="child-chores"></div><div id="child-chore-message" class="message"></div></div>
+<div class="section"><h3>My savings goals</h3><form id="goal-form"><label for="goal-title">What are you saving for?</label><input id="goal-title" maxlength="80" placeholder="e.g. A new football" required><label for="goal-target">Target amount (MR)</label><input id="goal-target" type="number" min="1" step="0.5" placeholder="e.g. 100" required><button class="primary" type="submit">Create savings goal</button></form><div id="goal-message" class="message"></div><div id="goal-list"></div></div>
+<div class="section"><h3>Recent transactions</h3><div id="transaction-list"></div></div>
+</div>
+<div class="notice">This is a virtual family rewards system. MR is not real money and this is not a bank account.</div>
+</section>
+</main>
+<footer>Motswala Family Bank · From our family to yours</footer>
+<script src="./config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+const cfg=window.MOTSWALA_CONFIG, loginPanel=document.getElementById('login-panel'), dashboard=document.getElementById('dashboard');
+const parentForm=document.getElementById('parent-form'), childForm=document.getElementById('child-form'), loginMessage=document.getElementById('login-message');
+const childAccounts={mahlogonolo:'lehlalerwamj+mahlogonolo@gmail.com',ditheto:'lehlalerwamj+ditheto@gmail.com',rorisang:'lehlalerwamj+rorisang@gmail.com'};
+let db=null, profile=null, familyMembers=[];
+const el=id=>document.getElementById(id);
+function msg(id,text,type){const e=el(id);e.textContent=text;e.className='message '+type}
+function money(n){return Number(n||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function safe(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function switchTab(parent){parentForm.hidden=!parent;childForm.hidden=parent;el('parent-tab').classList.toggle('active',parent);el('child-tab').classList.toggle('active',!parent);loginMessage.className='message';loginMessage.textContent=''}
+el('parent-tab').onclick=()=>switchTab(true);el('child-tab').onclick=()=>switchTab(false);
+function busy(form,on){const b=form.querySelector('button[type=submit]');b.disabled=on}
+async function loadProfile(user){
+ const res=await db.from('family_members').select('id,family_id,display_name,role').eq('auth_user_id',user.id).single();
+ if(res.error||!res.data){await db.auth.signOut();throw new Error('Signed in, but your family profile could not be found. Contact the parent administrator.')}
+ profile=res.data;loginPanel.hidden=true;dashboard.hidden=false;el('welcome').textContent='Welcome, '+profile.display_name;el('role-label').textContent=profile.role==='parent'?'Parent administrator':'Child account';el('avatar').textContent=profile.display_name.trim()[0].toUpperCase();
+ el('parent-view').hidden=profile.role!=='parent';el('child-view').hidden=profile.role!=='child';
+ if(profile.role==='parent')await loadParent();else await loadChild();
+}
+async function loadParent(){
+ const [membersRes,choresRes,subsRes]=await Promise.all([
+  db.from('family_members').select('id,display_name,role').eq('family_id',profile.family_id).order('display_name'),
+  db.from('chores').select('id,title,description,reward,active').eq('family_id',profile.family_id).order('created_at',{ascending:false}),
+  db.from('chore_submissions').select('id,chore_id,member_id,status,submitted_at,reviewed_at').order('submitted_at',{ascending:false})
+ ]);
+ if(membersRes.error)throw membersRes.error;if(choresRes.error)throw choresRes.error;if(subsRes.error)throw subsRes.error;
+ familyMembers=membersRes.data;const children=familyMembers.filter(m=>m.role==='child');const pending=subsRes.data.filter(s=>s.status==='pending');
+ el('child-count').textContent=children.length;el('pending-count').textContent=pending.length;
+ const walletRes=await db.from('wallet_transactions').select('member_id,amount,transaction_type').in('member_id',children.map(c=>c.id));
+ if(walletRes.error)throw walletRes.error;
+ el('family-list').innerHTML=children.map(c=>{const total=walletRes.data.filter(t=>t.member_id===c.id).reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);return '<div class="item row"><div><strong>'+safe(c.display_name)+'</strong><div class="small muted">Child account</div></div><strong>'+money(total)+' MR</strong></div>'}).join('')||'<p class="empty">No child profiles found.</p>';
+ const active=choresRes.data.filter(c=>c.active);
+ el('parent-chores').innerHTML=active.map(c=>'<div class="item"><div class="row"><strong>'+safe(c.title)+'</strong><strong>'+money(c.reward)+' MR</strong></div><p class="small muted">'+safe(c.description||'No description')+'</p></div>').join('')||'<p class="empty">No active chores yet. Add the first chore above.</p>';
+ const choreMap=new Map(choresRes.data.map(c=>[c.id,c.title]));const memberMap=new Map(familyMembers.map(m=>[m.id,m.display_name]));
+ el('approval-list').innerHTML=pending.map(s=>'<div class="item"><strong>'+safe(memberMap.get(s.member_id)||'Child')+'</strong><p>'+safe(choreMap.get(s.chore_id)||'Chore')+' · Submitted '+new Date(s.submitted_at).toLocaleDateString()+'</p><div class="actions"><button class="secondary" data-approve="'+s.id+'">Approve</button><button class="danger" data-reject="'+s.id+'">Reject</button></div></div>').join('')||'<p class="empty">There are no chores waiting for approval.</p>';
+ el('approval-list').querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>reviewSubmission(b.dataset.approve,'approve'));
+ el('approval-list').querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>reviewSubmission(b.dataset.reject,'reject'));
+}
+async function reviewSubmission(id,action){
+ const buttons=el('approval-list').querySelectorAll('button');buttons.forEach(b=>b.disabled=true);
+ try{const result=await db.rpc(action==='approve'?'approve_chore_submission':'reject_chore_submission',{p_submission_id:id});if(result.error)throw result.error;msg('approval-message',action==='approve'?'Chore approved and reward credited.':'Chore submission rejected.','success');await loadParent()}
+ catch(e){msg('approval-message',e.message||'Could not process this submission.','error');buttons.forEach(b=>b.disabled=false)}
+}
+async function loadChild(){
+ const [choresRes,subsRes,goalsRes,txRes]=await Promise.all([
+  db.from('chores').select('id,title,description,reward').eq('family_id',profile.family_id).eq('active',true).order('created_at',{ascending:false}),
+  db.from('chore_submissions').select('chore_id,status').eq('member_id',profile.id),
+  db.from('savings_goals').select('id,title,target_amount,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}),
+  db.from('wallet_transactions').select('amount,transaction_type,description,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}).limit(12)
+ ]);
+ for(const r of [choresRes,subsRes,goalsRes,txRes])if(r.error)throw r.error;
+ const balance=txRes.data.reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);
+ el('child-balance').textContent=money(balance);
+ const latest=new Map();subsRes.data.forEach(s=>{if(!latest.has(s.chore_id)||s.status==='pending')latest.set(s.chore_id,s.status)});
+ el('child-chores').innerHTML=choresRes.data.map(c=>{const status=latest.get(c.id);const label=status==='pending'?'Waiting for parent approval':status==='approved'?'Completed and approved':status==='rejected'?'Previously declined':'Not submitted';const canSubmit=status!=='pending'&&status!=='approved';return '<div class="item"><div class="row"><strong>'+safe(c.title)+'</strong><strong>'+money(c.reward)+' MR</strong></div><p class="small muted">'+safe(c.description||'No description')+'</p><div class="row"><span class="small muted">'+label+'</span>'+(canSubmit?'<button class="secondary" data-submit="'+c.id+'">Submit</button>':'')+'</div></div>'}).join('')||'<p class="empty">No chores are available right now.</p>';
+ el('child-chores').querySelectorAll('[data-submit]').forEach(b=>b.onclick=()=>submitChore(b.dataset.submit,b));
+ el('goal-list').innerHTML=goalsRes.data.map(g=>'<div class="item"><strong>'+safe(g.title)+'</strong><p class="small muted">Target: '+money(g.target_amount)+' MR</p></div>').join('')||'<p class="empty">You have not created a savings goal yet.</p>';
+ el('transaction-list').innerHTML=txRes.data.map(t=>'<div class="item row"><div><strong>'+safe(t.description||'Wallet transaction')+'</strong><div class="small muted">'+new Date(t.created_at).toLocaleDateString()+'</div></div><strong style="color:'+(t.transaction_type==='credit'?'#17613a':'#9b2520')+'">'+(t.transaction_type==='credit'?'+':'−')+money(t.amount)+' MR</strong></div>').join('')||'<p class="empty">No transactions yet. Approved rewards will appear here.</p>';
+}
+async function submitChore(choreId,button){button.disabled=true;try{const r=await db.from('chore_submissions').insert({chore_id:choreId,member_id:profile.id,status:'pending'});if(r.error)throw r.error;msg('child-chore-message','Your completed chore was submitted to the parent for approval.','success');await loadChild()}catch(e){msg('child-chore-message',e.message||'Could not submit chore.','error');button.disabled=false}}
+parentForm.addEventListener('submit',async e=>{e.preventDefault();busy(parentForm,true);try{const r=await db.auth.signInWithPassword({email:el('parent-email').value.trim(),password:el('parent-password').value});if(r.error)throw r.error;await loadProfile(r.data.user)}catch(err){msg('login-message',err.message||'Sign-in failed.','error')}finally{busy(parentForm,false)}});
+childForm.addEventListener('submit',async e=>{e.preventDefault();const username=el('child-username').value.trim().toLowerCase(),pin=el('child-pin').value,email=childAccounts[username];if(!email){msg('login-message','Username not recognised. Check the spelling.','error');return}if(!/^[0-9]{6}$/.test(pin)){msg('login-message','Enter your six-digit PIN.','error');return}busy(childForm,true);try{const r=await db.auth.signInWithPassword({email,password:pin});if(r.error)throw r.error;await loadProfile(r.data.user)}catch(err){msg('login-message',err.message||'Sign-in failed.','error')}finally{el('child-pin').value='';busy(childForm,false)}});
+el('chore-form').addEventListener('submit',async e=>{e.preventDefault();const b=el('chore-form').querySelector('button');b.disabled=true;try{const r=await db.from('chores').insert({family_id:profile.family_id,title:el('chore-title').value.trim(),description:el('chore-description').value.trim(),reward:Number(el('chore-reward').value),active:true});if(r.error)throw r.error;el('chore-form').reset();msg('chore-message','Chore added successfully.','success');await loadParent()}catch(err){msg('chore-message',err.message||'Could not add chore.','error')}finally{b.disabled=false}});
+el('goal-form').addEventListener('submit',async e=>{e.preventDefault();const b=el('goal-form').querySelector('button');b.disabled=true;try{const r=await db.from('savings_goals').insert({member_id:profile.id,title:el('goal-title').value.trim(),target_amount:Number(el('goal-target').value)});if(r.error)throw r.error;el('goal-form').reset();msg('goal-message','Your savings goal has been created.','success');await loadChild()}catch(err){msg('goal-message',err.message||'Could not create savings goal.','error')}finally{b.disabled=false}});
+el('sign-out').addEventListener('click',async()=>{await db.auth.signOut();profile=null;dashboard.hidden=true;loginPanel.hidden=false;parentForm.reset();childForm.reset();switchTab(true)});
+async function start(){if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey||!window.supabase){msg('login-message','The Supabase connection could not load. Refresh the page.','error');return}db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);const s=await db.auth.getSession();if(s.data.session){try{await loadProfile(s.data.session.user)}catch(e){dashboard.hidden=true;loginPanel.hidden=false;msg('login-message',e.message,'error')}}}
+start().catch(e=>msg('login-message',e.message||'Unable to start the app.','error'));
+})();
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>
