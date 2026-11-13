@@ -116,13 +116,16 @@ async function loadParent(){
  if(membersRes.error)throw membersRes.error;if(choresRes.error)throw choresRes.error;if(subsRes.error)throw subsRes.error;if(goalsRes.error)throw goalsRes.error;
  familyMembers=membersRes.data;const children=familyMembers.filter(m=>m.role==='child');const pending=subsRes.data.filter(s=>s.status==='pending');
  el('child-count').textContent=children.length;el('pending-count').textContent=pending.length;
- const walletRes=await db.from('wallet_transactions').select('member_id,amount,transaction_type,description,created_at').in('member_id',children.map(c=>c.id)).order('created_at',{ascending:false});
- if(walletRes.error)throw walletRes.error;
+ const [walletRes,contributionsRes]=await Promise.all([
+  db.from('wallet_transactions').select('member_id,amount,transaction_type,description,created_at').in('member_id',children.map(c=>c.id)).order('created_at',{ascending:false}),
+  db.from('savings_contributions').select('goal_id,amount').in('member_id',children.map(c=>c.id))
+ ]);
+ if(walletRes.error)throw walletRes.error;if(contributionsRes.error)throw contributionsRes.error;
  el('family-list').innerHTML=children.map(c=>{const total=walletRes.data.filter(t=>t.member_id===c.id).reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);return '<div class="item row"><div><strong>'+safe(c.display_name)+'</strong><div class="small muted">Child account</div></div><strong>'+money(total)+' MR</strong></div>'}).join('')||'<p class="empty">No child profiles found.</p>';
  const childNames=new Map(children.map(m=>[m.id,m.display_name]));
  el('wallet-member').innerHTML='<option value="">Choose a child</option>'+children.map(m=>'<option value="'+safe(m.id)+'">'+safe(m.display_name)+'</option>').join('');
  el('parent-goal-list').innerHTML=goalsRes.data.filter(g=>childNames.has(g.member_id)).map(g=>{
-  const saved=walletRes.data.filter(t=>t.member_id===g.member_id).reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);
+  const saved=contributionsRes.data.filter(c=>c.goal_id===g.id).reduce((a,c)=>a+Number(c.amount),0);
   const target=Number(g.target_amount)||0;const percent=target>0?Math.min(100,Math.max(0,(saved/target)*100)):0;const remaining=Math.max(0,target-saved);
   return '<div class="item"><div class="row"><strong>'+safe(childNames.get(g.member_id))+'</strong><span class="small muted">Savings goal</span></div><p>'+safe(g.title)+'</p><div class="goal-meta"><span>Saved: '+money(saved)+' MR</span><span>Target: '+money(target)+' MR</span></div><div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(percent)+'" aria-label="Savings progress"><div class="progress-fill" style="width:'+percent+'%"></div></div><div class="goal-meta"><strong>'+Math.round(percent)+'% complete</strong><span>'+money(remaining)+' MR to go</span></div></div>';
  }).join('')||'<p class="empty">The children have not created any savings goals yet.</p>';
@@ -144,19 +147,34 @@ async function loadChild(){
   db.from('chores').select('id,title,description,reward').eq('family_id',profile.family_id).eq('active',true).order('created_at',{ascending:false}),
   db.from('chore_submissions').select('chore_id,status').eq('member_id',profile.id),
   db.from('savings_goals').select('id,title,target_amount,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}),
-  db.from('wallet_transactions').select('amount,transaction_type,description,created_at').eq('member_id',profile.id).order('created_at',{ascending:false})
+  db.from('wallet_transactions').select('amount,transaction_type,description,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}),
+  db.from('savings_contributions').select('goal_id,amount,created_at').eq('member_id',profile.id).order('created_at',{ascending:false})
  ]);
- for(const r of [choresRes,subsRes,goalsRes,txRes])if(r.error)throw r.error;
+ for(const r of [choresRes,subsRes,goalsRes,txRes,contributionsRes])if(r.error)throw r.error;
  const balance=txRes.data.reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);
  el('child-balance').textContent=money(balance);
  const latest=new Map();subsRes.data.forEach(s=>{if(!latest.has(s.chore_id)||s.status==='pending')latest.set(s.chore_id,s.status)});
  el('child-chores').innerHTML=choresRes.data.map(c=>{const status=latest.get(c.id);const label=status==='pending'?'Waiting for parent approval':status==='approved'?'Completed and approved':status==='rejected'?'Previously declined':'Not submitted';const canSubmit=status!=='pending'&&status!=='approved';return '<div class="item"><div class="row"><strong>'+safe(c.title)+'</strong><strong>'+money(c.reward)+' MR</strong></div><p class="small muted">'+safe(c.description||'No description')+'</p><div class="row"><span class="small muted">'+label+'</span>'+(canSubmit?'<button class="secondary" data-submit="'+c.id+'">Submit</button>':'')+'</div></div>'}).join('')||'<p class="empty">No chores are available right now.</p>';
  el('child-chores').querySelectorAll('[data-submit]').forEach(b=>b.onclick=()=>submitChore(b.dataset.submit,b));
  el('goal-list').innerHTML=goalsRes.data.map(g=>{
-  const target=Number(g.target_amount)||0;const percent=target>0?Math.min(100,Math.max(0,(balance/target)*100)):0;const remaining=Math.max(0,target-balance);
-  return '<div class="item"><strong>'+safe(g.title)+'</strong><div class="goal-meta"><span>Saved: '+money(balance)+' MR</span><span>Target: '+money(target)+' MR</span></div><div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(percent)+'" aria-label="Savings progress"><div class="progress-fill" style="width:'+percent+'%"></div></div><div class="goal-meta"><strong>'+Math.round(percent)+'% complete</strong><span>'+money(remaining)+' MR to go</span></div></div>';
+  const saved=contributionsRes.data.filter(c=>c.goal_id===g.id).reduce((a,c)=>a+Number(c.amount),0);
+  const target=Number(g.target_amount)||0;const percent=target>0?Math.min(100,Math.max(0,(saved/target)*100)):0;const remaining=Math.max(0,target-saved);
+  const available=Math.max(0,balance);
+  return '<div class="item"><strong>'+safe(g.title)+'</strong><div class="goal-meta"><span>Saved: '+money(saved)+' MR</span><span>Target: '+money(target)+' MR</span></div><div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(percent)+'" aria-label="Savings progress"><div class="progress-fill" style="width:'+percent+'%"></div></div><div class="goal-meta"><strong>'+Math.round(percent)+'% complete</strong><span>'+money(remaining)+' MR to go</span></div>'+(remaining>0&&available>0?'<label for="contribution-'+safe(g.id)+'">Contribute to this goal (MR)</label><input id="contribution-'+safe(g.id)+'" type="number" min="0.01" max="'+Math.min(available,remaining)+'" step="0.01" placeholder="Available: '+money(available)+' MR"><button class="secondary" type="button" data-contribute="'+safe(g.id)+'" style="width:100%;margin-top:8px">Add to savings</button>':'<p class="small muted">'+(remaining<=0?'Goal completed!': 'Add MR to your wallet to contribute.')+'</p>')+'</div>';
  }).join('')||'<p class="empty">You have not created a savings goal yet.</p>';
+ el('goal-list').querySelectorAll('[data-contribute]').forEach(b=>b.onclick=()=>contributeToSavings(b.dataset.contribute,b));
  el('transaction-list').innerHTML=txRes.data.slice(0,12).map(t=>'<div class="item row"><div><strong>'+safe(t.description||'Wallet transaction')+'</strong><div class="small muted">'+new Date(t.created_at).toLocaleDateString()+'</div></div><strong style="color:'+(t.transaction_type==='credit'?'#17613a':'#9b2520')+'">'+(t.transaction_type==='credit'?'+':'−')+money(t.amount)+' MR</strong></div>').join('')||'<p class="empty">No transactions yet. Approved rewards will appear here.</p>';
+}
+async function contributeToSavings(goalId,button){
+ const input=el('contribution-'+goalId),amount=Number(input.value);
+ if(!Number.isFinite(amount)||amount<=0){msg('goal-message','Enter an amount greater than zero.','error');return}
+ button.disabled=true;
+ try{
+  const result=await db.rpc('contribute_to_savings',{p_goal_id:goalId,p_amount:amount});
+  if(result.error)throw result.error;
+  msg('goal-message','Savings contribution added successfully. Your available balance has been updated.','success');
+  await loadChild();
+ }catch(err){msg('goal-message',err.message||'Could not add this savings contribution.','error');button.disabled=false}
 }
 async function submitChore(choreId,button){button.disabled=true;try{const r=await db.from('chore_submissions').insert({chore_id:choreId,member_id:profile.id,status:'pending'});if(r.error)throw r.error;msg('child-chore-message','Your completed chore was submitted to the parent for approval.','success');await loadChild()}catch(e){msg('child-chore-message',e.message||'Could not submit chore.','error');button.disabled=false}}
 el('password-form').addEventListener('submit',async e=>{
