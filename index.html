@@ -143,7 +143,7 @@ async function reviewSubmission(id,action){
  catch(e){msg('approval-message',e.message||'Could not process this submission.','error');buttons.forEach(b=>b.disabled=false)}
 }
 async function loadChild(){
- const [choresRes,subsRes,goalsRes,txRes]=await Promise.all([
+ const [choresRes,subsRes,goalsRes,txRes,contributionsRes]=await Promise.all([
   db.from('chores').select('id,title,description,reward').eq('family_id',profile.family_id).eq('active',true).order('created_at',{ascending:false}),
   db.from('chore_submissions').select('chore_id,status').eq('member_id',profile.id),
   db.from('savings_goals').select('id,title,target_amount,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}),
