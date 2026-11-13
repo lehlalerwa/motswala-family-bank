@@ -61,6 +61,7 @@ footer{text-align:center;color:#718076;font-size:12px;padding:15px}
 <div class="stats"><div class="stat"><strong id="child-count">0</strong><span>Children</span></div><div class="stat"><strong id="pending-count">0</strong><span>Pending approvals</span></div></div>
 <div class="section"><h3>Family members</h3><div id="family-list" class="stack"></div></div>
 <div class="section"><h3>Children's savings goals</h3><div id="parent-goal-list"></div></div>
+<div class="section"><h3>Pending withdrawal requests</h3><div id="parent-withdrawal-requests"></div><div id="withdrawal-request-message" class="message" role="status" aria-live="polite"></div></div>
 <div class="section"><h3>Savings withdrawal records</h3><div id="parent-withdrawal-list"></div></div>
 <div class="section"><h3>Manage children's wallets</h3><p class="small muted">Award a bonus or record an agreed deduction. Every adjustment requires a reason.</p>
 <form id="wallet-form">
@@ -118,14 +119,18 @@ async function loadParent(){
  if(membersRes.error)throw membersRes.error;if(choresRes.error)throw choresRes.error;if(subsRes.error)throw subsRes.error;if(goalsRes.error)throw goalsRes.error;
  familyMembers=membersRes.data;const children=familyMembers.filter(m=>m.role==='child');const pending=subsRes.data.filter(s=>s.status==='pending');
  el('child-count').textContent=children.length;el('pending-count').textContent=pending.length;
- const [walletRes,contributionsRes,withdrawalsRes]=await Promise.all([
+ const [walletRes,contributionsRes,withdrawalsRes,requestsRes]=await Promise.all([
   db.from('wallet_transactions').select('member_id,amount,transaction_type,description,created_at').in('member_id',children.map(c=>c.id)).order('created_at',{ascending:false}),
   db.from('savings_contributions').select('goal_id,amount').in('member_id',children.map(c=>c.id)),
-  db.from('savings_withdrawals').select('id,goal_id,member_id,amount,reason,approved_by,created_at').in('member_id',children.map(c=>c.id)).order('created_at',{ascending:false})
+  db.from('savings_withdrawals').select('id,goal_id,member_id,amount,reason,approved_by,created_at').in('member_id',children.map(c=>c.id)).order('created_at',{ascending:false}),
+  db.from('savings_withdrawal_requests').select('id,goal_id,member_id,amount,reason,status,created_at').in('member_id',children.map(c=>c.id)).order('created_at',{ascending:false})
  ]);
- if(walletRes.error)throw walletRes.error;if(contributionsRes.error)throw contributionsRes.error;if(withdrawalsRes.error)throw withdrawalsRes.error;
+ if(walletRes.error)throw walletRes.error;if(contributionsRes.error)throw contributionsRes.error;if(withdrawalsRes.error)throw withdrawalsRes.error;if(requestsRes.error)throw requestsRes.error;
  el('family-list').innerHTML=children.map(c=>{const total=walletRes.data.filter(t=>t.member_id===c.id).reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);return '<div class="item row"><div><strong>'+safe(c.display_name)+'</strong><div class="small muted">Child account</div></div><strong>'+money(total)+' MR</strong></div>'}).join('')||'<p class="empty">No child profiles found.</p>';
  const childNames=new Map(children.map(m=>[m.id,m.display_name]));
+ el('parent-withdrawal-requests').innerHTML=requestsRes.data.filter(r=>r.status==='pending').map(r=>'<div class="item"><div class="row"><strong>'+safe(childNames.get(r.member_id)||'Child')+'</strong><strong>'+money(r.amount)+' MR</strong></div><p>'+safe(goalsRes.data.find(g=>g.id===r.goal_id)?.title||'Savings goal')+'</p><p class="small muted">'+safe(r.reason)+' · Requested '+new Date(r.created_at).toLocaleDateString()+'</p><div class="actions"><button class="secondary" type="button" data-request-approve="'+safe(r.id)+'">Approve</button><button class="danger" type="button" data-request-reject="'+safe(r.id)+'">Reject</button></div></div>').join('')||'<p class="empty">No pending withdrawal requests.</p>';
+ el('parent-withdrawal-requests').querySelectorAll('[data-request-approve]').forEach(b=>b.onclick=()=>reviewWithdrawalRequest(b.dataset.requestApprove,'approved',b));
+ el('parent-withdrawal-requests').querySelectorAll('[data-request-reject]').forEach(b=>b.onclick=()=>reviewWithdrawalRequest(b.dataset.requestReject,'rejected',b));
  el('parent-withdrawal-list').innerHTML=withdrawalsRes.data.map(w=>'<div class="item"><div class="row"><strong>'+safe(childNames.get(w.member_id)||'Child')+'</strong><strong>−'+money(w.amount)+' MR</strong></div><p class="small">'+safe(goalsRes.data.find(g=>g.id===w.goal_id)?.title||'Savings goal')+'</p><p class="small muted">'+safe(w.reason)+' · '+new Date(w.created_at).toLocaleDateString()+'</p></div>').join('')||'<p class="empty">No savings withdrawals have been recorded.</p>';
  el('wallet-member').innerHTML='<option value="">Choose a child</option>'+children.map(m=>'<option value="'+safe(m.id)+'">'+safe(m.display_name)+'</option>').join('');
  el('parent-goal-list').innerHTML=goalsRes.data.filter(g=>childNames.has(g.member_id)).map(g=>{
@@ -133,10 +138,10 @@ async function loadParent(){
   const withdrawn=withdrawalsRes.data.filter(w=>w.goal_id===g.id).reduce((a,w)=>a+Number(w.amount),0);
   const saved=Math.max(0,contributed-withdrawn);
   const target=Number(g.target_amount)||0;const percent=target>0?Math.min(100,Math.max(0,(saved/target)*100)):0;const remaining=Math.max(0,target-saved);
-  const withdrawForm=saved>0?'<div class="section"><label for="withdraw-amount-'+safe(g.id)+'">Withdraw from this goal (MR)</label><input id="withdraw-amount-'+safe(g.id)+'" type="number" min="0.01" max="'+saved.toFixed(2)+'" step="0.01" placeholder="Available: '+money(saved)+' MR"><label for="withdraw-reason-'+safe(g.id)+'">Reason</label><input id="withdraw-reason-'+safe(g.id)+'" maxlength="200" placeholder="Reason for withdrawal"><button class="secondary" type="button" data-withdraw="'+safe(g.id)+'" style="width:100%;margin-top:8px">Approve withdrawal</button></div>':'<p class="small muted">No savings are currently available to withdraw.</p>';
+  const withdrawForm='';
   return '<div class="item"><div class="row"><strong>'+safe(childNames.get(g.member_id))+'</strong><span class="small muted">Savings goal</span></div><p>'+safe(g.title)+'</p><div class="goal-meta"><span>Saved: '+money(saved)+' MR</span><span>Target: '+money(target)+' MR</span></div><div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(percent)+'" aria-label="Savings progress"><div class="progress-fill" style="width:'+percent+'%"></div></div><div class="goal-meta"><strong>'+Math.round(percent)+'% complete</strong><span>'+money(remaining)+' MR to go</span></div>'+withdrawForm+'</div>';
  }).join('')||'<p class="empty">The children have not created any savings goals yet.</p>';
- el('parent-goal-list').onclick=(event)=>{const b=event.target.closest('[data-withdraw]');if(b)parentWithdraw(b.dataset.withdraw,b)};
+ 
  el('parent-transaction-list').innerHTML=walletRes.data.slice(0,20).map(t=>'<div class="item row"><div><strong>'+safe(childNames.get(t.member_id)||'Child')+'</strong><div class="small muted">'+safe(t.description||'Wallet transaction')+' · '+new Date(t.created_at).toLocaleDateString()+'</div></div><strong style="color:'+(t.transaction_type==='credit'?'#17613a':'#9b2520')+'">'+(t.transaction_type==='credit'?'+':'−')+money(t.amount)+' MR</strong></div>').join('')||'<p class="empty">No family wallet transactions yet.</p>';
  const active=choresRes.data.filter(c=>c.active);
  el('parent-chores').innerHTML=active.map(c=>'<div class="item"><div class="row"><strong>'+safe(c.title)+'</strong><strong>'+money(c.reward)+' MR</strong></div><p class="small muted">'+safe(c.description||'No description')+'</p></div>').join('')||'<p class="empty">No active chores yet. Add the first chore above.</p>';
@@ -151,15 +156,16 @@ async function reviewSubmission(id,action){
  catch(e){msg('approval-message',e.message||'Could not process this submission.','error');buttons.forEach(b=>b.disabled=false)}
 }
 async function loadChild(){
- const [choresRes,subsRes,goalsRes,txRes,contributionsRes,withdrawalsRes]=await Promise.all([
+ const [choresRes,subsRes,goalsRes,txRes,contributionsRes,withdrawalsRes,requestsRes]=await Promise.all([
   db.from('chores').select('id,title,description,reward').eq('family_id',profile.family_id).eq('active',true).order('created_at',{ascending:false}),
   db.from('chore_submissions').select('chore_id,status').eq('member_id',profile.id),
   db.from('savings_goals').select('id,title,target_amount,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}),
   db.from('wallet_transactions').select('amount,transaction_type,description,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}),
   db.from('savings_contributions').select('goal_id,amount,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}),
-  db.from('savings_withdrawals').select('id,goal_id,amount,reason,created_at').eq('member_id',profile.id).order('created_at',{ascending:false})
+  db.from('savings_withdrawals').select('id,goal_id,amount,reason,created_at').eq('member_id',profile.id).order('created_at',{ascending:false}),
+  db.from('savings_withdrawal_requests').select('id,goal_id,amount,reason,status,review_note,created_at,reviewed_at').eq('member_id',profile.id).order('created_at',{ascending:false})
  ]);
- for(const r of [choresRes,subsRes,goalsRes,txRes,contributionsRes,withdrawalsRes])if(r.error)throw r.error;
+ for(const r of [choresRes,subsRes,goalsRes,txRes,contributionsRes,withdrawalsRes,requestsRes])if(r.error)throw r.error;
  const balance=txRes.data.reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);
  el('child-balance').textContent=money(balance);
  const latest=new Map();subsRes.data.forEach(s=>{if(!latest.has(s.chore_id)||s.status==='pending')latest.set(s.chore_id,s.status)});
@@ -171,11 +177,26 @@ async function loadChild(){
   const saved=Math.max(0,contributed-withdrawn);
   const target=Number(g.target_amount)||0;const percent=target>0?Math.min(100,Math.max(0,(saved/target)*100)):0;const remaining=Math.max(0,target-saved);
   const available=Math.max(0,balance);
-  return '<div class="item"><strong>'+safe(g.title)+'</strong><div class="goal-meta"><span>Saved: '+money(saved)+' MR</span><span>Target: '+money(target)+' MR</span></div><div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(percent)+'" aria-label="Savings progress"><div class="progress-fill" style="width:'+percent+'%"></div></div><div class="goal-meta"><strong>'+Math.round(percent)+'% complete</strong><span>'+money(remaining)+' MR to go</span></div>'+(remaining>0&&available>0?'<label for="contribution-'+safe(g.id)+'">Contribute to this goal (MR)</label><input id="contribution-'+safe(g.id)+'" type="number" min="0.01" max="'+Math.min(available,remaining)+'" step="0.01" placeholder="Available: '+money(available)+' MR"><button class="secondary" type="button" data-contribute="'+safe(g.id)+'" style="width:100%;margin-top:8px">Add to savings</button>':'<p class="small muted">'+(remaining<=0?'Goal completed!': 'Add MR to your wallet to contribute.')+'</p>')+'</div>';
+  const pendingForGoal=requestsRes.data.filter(r=>r.goal_id===g.id&&r.status==='pending').reduce((a,r)=>a+Number(r.amount),0);
+  return '<div class="item"><strong>'+safe(g.title)+'</strong><div class="goal-meta"><span>Saved: '+money(saved)+' MR</span><span>Target: '+money(target)+' MR</span></div><div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(percent)+'" aria-label="Savings progress"><div class="progress-fill" style="width:'+percent+'%"></div></div><div class="goal-meta"><strong>'+Math.round(percent)+'% complete</strong><span>'+money(remaining)+' MR to go</span></div>'+(remaining>0&&available>0?'<label for="contribution-'+safe(g.id)+'">Contribute to this goal (MR)</label><input id="contribution-'+safe(g.id)+'" type="number" min="0.01" max="'+Math.min(available,remaining)+'" step="0.01" placeholder="Available: '+money(available)+' MR"><button class="secondary" type="button" data-contribute="'+safe(g.id)+'" style="width:100%;margin-top:8px">Add to savings</button>':'<p class="small muted">'+(remaining<=0?'Goal completed!': 'Add MR to your wallet to contribute.')+'</p>')+(saved>pendingForGoal?'<label for="withdraw-request-amount-'+safe(g.id)+'">Request withdrawal (MR)</label><input id="withdraw-request-amount-'+safe(g.id)+'" type="number" min="0.01" max="'+(saved-pendingForGoal).toFixed(2)+'" step="0.01" placeholder="Available: '+money(saved-pendingForGoal)+' MR"><label for="withdraw-request-reason-'+safe(g.id)+'">Why do you need this withdrawal?</label><input id="withdraw-request-reason-'+safe(g.id)+'" maxlength="200" placeholder="Enter your reason"><button class="secondary" type="button" data-request-withdraw="'+safe(g.id)+'" style="width:100%;margin-top:8px">Submit withdrawal request</button>':'<p class="small muted">'+(pendingForGoal>0?'A withdrawal request is already pending for this goal.':'No savings are available to request.')+'</p>')+'</div>';
  }).join('')||'<p class="empty">You have not created a savings goal yet.</p>';
  el('goal-list').querySelectorAll('[data-contribute]').forEach(b=>b.onclick=()=>contributeToSavings(b.dataset.contribute,b));
- el('child-withdrawal-list').innerHTML=withdrawalsRes.data.map(w=>'<div class="item"><div class="row"><strong>'+money(w.amount)+' MR returned to wallet</strong><span class="small muted">'+new Date(w.created_at).toLocaleDateString()+'</span></div><p class="small">'+safe(goalsRes.data.find(g=>g.id===w.goal_id)?.title||'Savings goal')+'</p><p class="small muted">'+safe(w.reason)+'</p></div>').join('')||'<p class="empty">No withdrawals have been recorded.</p>';
+ el('goal-list').querySelectorAll('[data-request-withdraw]').forEach(b=>b.onclick=()=>submitWithdrawalRequest(b.dataset.requestWithdraw,b));
+ const requestHistory=requestsRes.data.map(r=>'<div class="item"><div class="row"><strong>'+money(r.amount)+' MR request</strong><span class="small muted">'+safe(r.status.toUpperCase())+'</span></div><p class="small">'+safe(goalsRes.data.find(g=>g.id===r.goal_id)?.title||'Savings goal')+'</p><p class="small muted">'+safe(r.reason)+(r.review_note?' · Parent note: '+safe(r.review_note):'')+'</p></div>').join('');
+ el('child-withdrawal-list').innerHTML=requestHistory+withdrawalsRes.data.map(w=>'<div class="item"><div class="row"><strong>'+money(w.amount)+' MR returned to wallet</strong><span class="small muted">'+new Date(w.created_at).toLocaleDateString()+'</span></div><p class="small">'+safe(goalsRes.data.find(g=>g.id===w.goal_id)?.title||'Savings goal')+'</p><p class="small muted">'+safe(w.reason)+'</p></div>').join('')||'<p class="empty">No withdrawals have been recorded.</p>';
  el('transaction-list').innerHTML=txRes.data.slice(0,12).map(t=>'<div class="item row"><div><strong>'+safe(t.description||'Wallet transaction')+'</strong><div class="small muted">'+new Date(t.created_at).toLocaleDateString()+'</div></div><strong style="color:'+(t.transaction_type==='credit'?'#17613a':'#9b2520')+'">'+(t.transaction_type==='credit'?'+':'−')+money(t.amount)+' MR</strong></div>').join('')||'<p class="empty">No transactions yet. Approved rewards will appear here.</p>';
+}
+async function reviewWithdrawalRequest(requestId,decision,button){
+ const buttons=el('parent-withdrawal-requests').querySelectorAll('button');buttons.forEach(b=>b.disabled=true);const old=button.textContent;button.textContent='Processing...';
+ try{const r=await db.rpc('review_savings_withdrawal_request',{p_request_id:requestId,p_decision:decision,p_review_note:null});if(r.error)throw r.error;await loadParent();msg('withdrawal-request-message',decision==='approved'?'Withdrawal request approved. The child wallet and savings have been updated.':'Withdrawal request rejected. The child's savings and wallet are unchanged.','success');}
+ catch(e){msg('withdrawal-request-message',e.message||'Could not review this request.','error');buttons.forEach(b=>b.disabled=false);button.textContent=old;}
+}
+async function submitWithdrawalRequest(goalId,button){
+ const amount=Number(el('withdraw-request-amount-'+goalId)?.value);const reason=(el('withdraw-request-reason-'+goalId)?.value||'').trim();
+ if(!Number.isFinite(amount)||amount<=0||!reason){msg('goal-message','Enter a positive amount and explain why you need the withdrawal.','error');return}
+ button.disabled=true;const old=button.textContent;button.textContent='Submitting...';
+ try{const r=await db.rpc('request_savings_withdrawal',{p_goal_id:goalId,p_amount:amount,p_reason:reason});if(r.error)throw r.error;msg('goal-message','Your withdrawal request has been sent to the parent for review.','success');await loadChild();}
+ catch(e){msg('goal-message',e.message||'Could not submit your withdrawal request.','error');button.disabled=false;button.textContent=old;}
 }
 async function parentWithdraw(goalId,button){
  const amount=Number(el('withdraw-amount-'+goalId)?.value);
