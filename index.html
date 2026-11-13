@@ -14,8 +14,8 @@ h1{font-size:clamp(22px,5vw,30px);margin:0}.tag{margin:4px 0 0;color:#dcebdd;fon
 .pill{display:inline-flex;background:#edf6ed;color:#17613a;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;letter-spacing:.3px}
 h2{font-size:20px;margin:12px 0 6px}h3{font-size:16px;margin:0 0 10px}.muted{color:var(--muted)}.small{font-size:12px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:18px 0;background:#f0f4ef;padding:5px;border-radius:12px}
 .tab{border:0;border-radius:9px;padding:10px;background:transparent;color:#53645a;font-weight:750;cursor:pointer}.tab.active{background:white;color:var(--green);box-shadow:0 2px 8px #153b2512}
-label{display:block;font-size:13px;font-weight:750;margin:12px 0 5px}input,textarea{width:100%;border:1px solid #cfdacf;border-radius:10px;padding:11px 12px;font:inherit;color:var(--ink);background:white}textarea{min-height:68px;resize:vertical}
-input:focus,textarea:focus{outline:3px solid #d9ead9;border-color:var(--green2)}.primary,.secondary,.danger{border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:800;cursor:pointer}.primary{background:var(--green);color:white;width:100%;margin-top:15px}.secondary{background:#edf6ed;color:var(--green)}.danger{background:#fff0ef;color:#9b2520}.primary:disabled,.secondary:disabled,.danger:disabled{opacity:.6;cursor:wait}
+label{display:block;font-size:13px;font-weight:750;margin:12px 0 5px}input,textarea,select{width:100%;border:1px solid #cfdacf;border-radius:10px;padding:11px 12px;font:inherit;color:var(--ink);background:white}textarea{min-height:68px;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:3px solid #d9ead9;border-color:var(--green2)}.primary,.secondary,.danger{border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:800;cursor:pointer}.primary{background:var(--green);color:white;width:100%;margin-top:15px}.secondary{background:#edf6ed;color:var(--green)}.danger{background:#fff0ef;color:#9b2520}.primary:disabled,.secondary:disabled,.danger:disabled{opacity:.6;cursor:wait}
 .message{display:none;margin-top:12px;border-radius:10px;padding:10px 12px;font-size:13px}.message.error{display:block;background:#fff0ef;color:#9b2520;border:1px solid #f2cbc7}.message.success{display:block;background:#edf7ed;color:#17613a;border:1px solid #cfe5cf}
 .notice{background:#fff8e7;border:1px solid #f2dfaa;border-radius:12px;padding:11px 13px;color:#654b14;font-size:12px;margin-top:14px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}.stack{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:9px}.item p{margin:4px 0}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}.actions button{font-size:13px;padding:8px 11px}
@@ -61,6 +61,15 @@ footer{text-align:center;color:#718076;font-size:12px;padding:15px}
 <div class="stats"><div class="stat"><strong id="child-count">0</strong><span>Children</span></div><div class="stat"><strong id="pending-count">0</strong><span>Pending approvals</span></div></div>
 <div class="section"><h3>Family members</h3><div id="family-list" class="stack"></div></div>
 <div class="section"><h3>Children's savings goals</h3><div id="parent-goal-list"></div></div>
+<div class="section"><h3>Manage children's wallets</h3><p class="small muted">Award a bonus or record an agreed deduction. Every adjustment requires a reason.</p>
+<form id="wallet-form">
+<label for="wallet-member">Child</label><select id="wallet-member" required><option value="">Choose a child</option></select>
+<label for="wallet-type">Adjustment type</label><select id="wallet-type" required><option value="credit">Award bonus (add MR)</option><option value="debit">Deduct MR</option></select>
+<label for="wallet-amount">Amount (MR)</label><input id="wallet-amount" type="number" min="0.01" step="0.01" placeholder="e.g. 10" required>
+<label for="wallet-description">Reason</label><textarea id="wallet-description" maxlength="200" placeholder="e.g. Special effort helping at home" required></textarea>
+<button class="primary" type="submit">Save wallet adjustment</button>
+</form><div id="wallet-message" class="message" role="status" aria-live="polite"></div></div>
+<div class="section"><h3>Recent family wallet transactions</h3><div id="parent-transaction-list"></div></div>
 <div class="section"><h3>Create a chore</h3><form id="chore-form"><label for="chore-title">Chore name</label><input id="chore-title" maxlength="80" placeholder="e.g. Make your bed" required><label for="chore-description">Description (optional)</label><textarea id="chore-description" maxlength="250" placeholder="What needs to be done?"></textarea><label for="chore-reward">Reward (MR)</label><input id="chore-reward" type="number" min="1" step="0.5" placeholder="e.g. 5" required><button class="primary" type="submit">Add chore</button></form><div id="chore-message" class="message"></div></div>
 <div class="section"><h3>Active chores</h3><div id="parent-chores"></div></div>
 <div class="section"><h3>Chore approvals</h3><p class="small muted">Review completed chores submitted by the children.</p><div id="approval-list"></div><div id="approval-message" class="message"></div></div>
@@ -107,15 +116,17 @@ async function loadParent(){
  if(membersRes.error)throw membersRes.error;if(choresRes.error)throw choresRes.error;if(subsRes.error)throw subsRes.error;if(goalsRes.error)throw goalsRes.error;
  familyMembers=membersRes.data;const children=familyMembers.filter(m=>m.role==='child');const pending=subsRes.data.filter(s=>s.status==='pending');
  el('child-count').textContent=children.length;el('pending-count').textContent=pending.length;
- const walletRes=await db.from('wallet_transactions').select('member_id,amount,transaction_type').in('member_id',children.map(c=>c.id));
+ const walletRes=await db.from('wallet_transactions').select('member_id,amount,transaction_type,description,created_at').in('member_id',children.map(c=>c.id)).order('created_at',{ascending:false});
  if(walletRes.error)throw walletRes.error;
  el('family-list').innerHTML=children.map(c=>{const total=walletRes.data.filter(t=>t.member_id===c.id).reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);return '<div class="item row"><div><strong>'+safe(c.display_name)+'</strong><div class="small muted">Child account</div></div><strong>'+money(total)+' MR</strong></div>'}).join('')||'<p class="empty">No child profiles found.</p>';
  const childNames=new Map(children.map(m=>[m.id,m.display_name]));
+ el('wallet-member').innerHTML='<option value="">Choose a child</option>'+children.map(m=>'<option value="'+safe(m.id)+'">'+safe(m.display_name)+'</option>').join('');
  el('parent-goal-list').innerHTML=goalsRes.data.filter(g=>childNames.has(g.member_id)).map(g=>{
   const saved=walletRes.data.filter(t=>t.member_id===g.member_id).reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);
   const target=Number(g.target_amount)||0;const percent=target>0?Math.min(100,Math.max(0,(saved/target)*100)):0;const remaining=Math.max(0,target-saved);
   return '<div class="item"><div class="row"><strong>'+safe(childNames.get(g.member_id))+'</strong><span class="small muted">Savings goal</span></div><p>'+safe(g.title)+'</p><div class="goal-meta"><span>Saved: '+money(saved)+' MR</span><span>Target: '+money(target)+' MR</span></div><div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(percent)+'" aria-label="Savings progress"><div class="progress-fill" style="width:'+percent+'%"></div></div><div class="goal-meta"><strong>'+Math.round(percent)+'% complete</strong><span>'+money(remaining)+' MR to go</span></div></div>';
  }).join('')||'<p class="empty">The children have not created any savings goals yet.</p>';
+ el('parent-transaction-list').innerHTML=walletRes.data.slice(0,20).map(t=>'<div class="item row"><div><strong>'+safe(childNames.get(t.member_id)||'Child')+'</strong><div class="small muted">'+safe(t.description||'Wallet transaction')+' · '+new Date(t.created_at).toLocaleDateString()+'</div></div><strong style="color:'+(t.transaction_type==='credit'?'#17613a':'#9b2520')+'">'+(t.transaction_type==='credit'?'+':'−')+money(t.amount)+' MR</strong></div>').join('')||'<p class="empty">No family wallet transactions yet.</p>';
  const active=choresRes.data.filter(c=>c.active);
  el('parent-chores').innerHTML=active.map(c=>'<div class="item"><div class="row"><strong>'+safe(c.title)+'</strong><strong>'+money(c.reward)+' MR</strong></div><p class="small muted">'+safe(c.description||'No description')+'</p></div>').join('')||'<p class="empty">No active chores yet. Add the first chore above.</p>';
  const choreMap=new Map(choresRes.data.map(c=>[c.id,c.title]));const memberMap=new Map(familyMembers.map(m=>[m.id,m.display_name]));
@@ -179,6 +190,22 @@ el('forgot-password').addEventListener('click',async()=>{
 parentForm.addEventListener('submit',async e=>{e.preventDefault();busy(parentForm,true);try{const r=await db.auth.signInWithPassword({email:el('parent-email').value.trim(),password:el('parent-password').value});if(r.error)throw r.error;await loadProfile(r.data.user)}catch(err){msg('login-message',err.message||'Sign-in failed.','error')}finally{busy(parentForm,false)}});
 childForm.addEventListener('submit',async e=>{e.preventDefault();const username=el('child-username').value.trim().toLowerCase(),pin=el('child-pin').value,email=childAccounts[username];if(!email){msg('login-message','Username not recognised. Check the spelling.','error');return}if(!/^[0-9]{6}$/.test(pin)){msg('login-message','Enter your six-digit PIN.','error');return}busy(childForm,true);try{const r=await db.auth.signInWithPassword({email,password:pin});if(r.error)throw r.error;await loadProfile(r.data.user)}catch(err){msg('login-message',err.message||'Sign-in failed.','error')}finally{el('child-pin').value='';busy(childForm,false)}});
 el('chore-form').addEventListener('submit',async e=>{e.preventDefault();const b=el('chore-form').querySelector('button');b.disabled=true;try{const r=await db.from('chores').insert({family_id:profile.family_id,title:el('chore-title').value.trim(),description:el('chore-description').value.trim(),reward:Number(el('chore-reward').value),active:true});if(r.error)throw r.error;el('chore-form').reset();msg('chore-message','Chore added successfully.','success');await loadParent()}catch(err){msg('chore-message',err.message||'Could not add chore.','error')}finally{b.disabled=false}});
+el('wallet-form').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const b=el('wallet-form').querySelector('button[type="submit"]');
+ const memberId=el('wallet-member').value, amount=Number(el('wallet-amount').value);
+ const transactionType=el('wallet-type').value, description=el('wallet-description').value.trim();
+ if(!memberId||!Number.isFinite(amount)||amount<=0||!description){msg('wallet-message','Choose a child, enter a positive amount and provide a reason.','error');return}
+ b.disabled=true;
+ try{
+  const r=await db.rpc('adjust_wallet_balance',{p_member_id:memberId,p_amount:amount,p_transaction_type:transactionType,p_description:description});
+  if(r.error)throw r.error;
+  el('wallet-form').reset();
+  msg('wallet-message',transactionType==='credit'?'Bonus awarded successfully.':'Deduction recorded successfully.','success');
+  await loadParent();
+ }catch(err){msg('wallet-message',err.message||'Could not update this wallet.','error')}
+ finally{b.disabled=false}
+});
 el('goal-form').addEventListener('submit',async e=>{e.preventDefault();const b=el('goal-form').querySelector('button');b.disabled=true;try{const r=await db.from('savings_goals').insert({member_id:profile.id,title:el('goal-title').value.trim(),target_amount:Number(el('goal-target').value)});if(r.error)throw r.error;el('goal-form').reset();msg('goal-message','Your savings goal has been created.','success');await loadChild()}catch(err){msg('goal-message',err.message||'Could not create savings goal.','error')}finally{b.disabled=false}});
 el('sign-out').addEventListener('click',async()=>{await db.auth.signOut();profile=null;dashboard.hidden=true;loginPanel.hidden=false;parentForm.reset();childForm.reset();switchTab(true)});
 function showRecoveryScreen(){
