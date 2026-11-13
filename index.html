@@ -188,7 +188,7 @@ async function loadChild(){
 }
 async function reviewWithdrawalRequest(requestId,decision,button){
  const buttons=el('parent-withdrawal-requests').querySelectorAll('button');buttons.forEach(b=>b.disabled=true);const old=button.textContent;button.textContent='Processing...';
- try{const r=await db.rpc('review_savings_withdrawal_request',{p_request_id:requestId,p_decision:decision,p_review_note:null});if(r.error)throw r.error;await loadParent();msg('withdrawal-request-message',decision==='approved'?'Withdrawal request approved. The child wallet and savings have been updated.':'Withdrawal request rejected. The child's savings and wallet are unchanged.','success');}
+ try{const r=await db.rpc('review_savings_withdrawal_request',{p_request_id:requestId,p_decision:decision,p_review_note:null});if(r.error)throw r.error;await loadParent();msg('withdrawal-request-message',decision==='approved'?'Withdrawal request approved. The child wallet and savings have been updated.':'Withdrawal request rejected. The child savings and wallet are unchanged.','success');}
  catch(e){msg('withdrawal-request-message',e.message||'Could not review this request.','error');buttons.forEach(b=>b.disabled=false);button.textContent=old;}
 }
 async function submitWithdrawalRequest(goalId,button){
