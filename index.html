@@ -136,7 +136,7 @@ async function loadParent(){
   const withdrawForm=saved>0?'<div class="section"><label for="withdraw-amount-'+safe(g.id)+'">Withdraw from this goal (MR)</label><input id="withdraw-amount-'+safe(g.id)+'" type="number" min="0.01" max="'+saved.toFixed(2)+'" step="0.01" placeholder="Available: '+money(saved)+' MR"><label for="withdraw-reason-'+safe(g.id)+'">Reason</label><input id="withdraw-reason-'+safe(g.id)+'" maxlength="200" placeholder="Reason for withdrawal"><button class="secondary" type="button" data-withdraw="'+safe(g.id)+'" style="width:100%;margin-top:8px">Approve withdrawal</button></div>':'<p class="small muted">No savings are currently available to withdraw.</p>';
   return '<div class="item"><div class="row"><strong>'+safe(childNames.get(g.member_id))+'</strong><span class="small muted">Savings goal</span></div><p>'+safe(g.title)+'</p><div class="goal-meta"><span>Saved: '+money(saved)+' MR</span><span>Target: '+money(target)+' MR</span></div><div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(percent)+'" aria-label="Savings progress"><div class="progress-fill" style="width:'+percent+'%"></div></div><div class="goal-meta"><strong>'+Math.round(percent)+'% complete</strong><span>'+money(remaining)+' MR to go</span></div>'+withdrawForm+'</div>';
  }).join('')||'<p class="empty">The children have not created any savings goals yet.</p>';
- el('parent-goal-list').querySelectorAll('[data-withdraw]').forEach(b=>b.onclick=()=>parentWithdraw(b.dataset.withdraw,b));
+ el('parent-goal-list').onclick=(event)=>{const b=event.target.closest('[data-withdraw]');if(b)parentWithdraw(b.dataset.withdraw,b)};
  el('parent-transaction-list').innerHTML=walletRes.data.slice(0,20).map(t=>'<div class="item row"><div><strong>'+safe(childNames.get(t.member_id)||'Child')+'</strong><div class="small muted">'+safe(t.description||'Wallet transaction')+' · '+new Date(t.created_at).toLocaleDateString()+'</div></div><strong style="color:'+(t.transaction_type==='credit'?'#17613a':'#9b2520')+'">'+(t.transaction_type==='credit'?'+':'−')+money(t.amount)+' MR</strong></div>').join('')||'<p class="empty">No family wallet transactions yet.</p>';
  const active=choresRes.data.filter(c=>c.active);
  el('parent-chores').innerHTML=active.map(c=>'<div class="item"><div class="row"><strong>'+safe(c.title)+'</strong><strong>'+money(c.reward)+' MR</strong></div><p class="small muted">'+safe(c.description||'No description')+'</p></div>').join('')||'<p class="empty">No active chores yet. Add the first chore above.</p>';
@@ -178,17 +178,23 @@ async function loadChild(){
  el('transaction-list').innerHTML=txRes.data.slice(0,12).map(t=>'<div class="item row"><div><strong>'+safe(t.description||'Wallet transaction')+'</strong><div class="small muted">'+new Date(t.created_at).toLocaleDateString()+'</div></div><strong style="color:'+(t.transaction_type==='credit'?'#17613a':'#9b2520')+'">'+(t.transaction_type==='credit'?'+':'−')+money(t.amount)+' MR</strong></div>').join('')||'<p class="empty">No transactions yet. Approved rewards will appear here.</p>';
 }
 async function parentWithdraw(goalId,button){
- const amount=Number(el('withdraw-amount-'+goalId).value);
- const reason=el('withdraw-reason-'+goalId).value.trim();
+ const amount=Number(el('withdraw-amount-'+goalId)?.value);
+ const reason=(el('withdraw-reason-'+goalId)?.value||'').trim();
  if(!Number.isFinite(amount)||amount<=0||!reason){msg('wallet-message','Enter a positive withdrawal amount and a reason.','error');return}
- if(!confirm('Approve a withdrawal of '+money(amount)+' MR from this savings goal and return it to the child wallet?'))return;
  button.disabled=true;
+ const originalText=button.textContent;
+ button.textContent='Processing...';
+ msg('wallet-message','Processing the savings withdrawal…','success');
  try{
   const result=await db.rpc('withdraw_from_savings',{p_goal_id:goalId,p_amount:amount,p_reason:reason});
   if(result.error)throw result.error;
-  msg('wallet-message','Withdrawal approved. The amount has been returned to the child wallet.','success');
   await loadParent();
- }catch(err){msg('wallet-message',err.message||'Could not approve this withdrawal.','error');button.disabled=false}
+  msg('wallet-message','Withdrawal approved. '+money(amount)+' MR has been returned to the child wallet.','success');
+ }catch(err){
+  msg('wallet-message',err.message||'Could not approve this withdrawal.','error');
+  button.disabled=false;
+  button.textContent=originalText;
+ }
 }
 async function contributeToSavings(goalId,button){
  const input=el('contribution-'+goalId),amount=Number(input.value);
