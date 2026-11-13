@@ -59,6 +59,7 @@ footer{text-align:center;color:#718076;font-size:12px;padding:15px}
 <div id="parent-view" hidden>
 <div class="stats"><div class="stat"><strong id="child-count">0</strong><span>Children</span></div><div class="stat"><strong id="pending-count">0</strong><span>Pending approvals</span></div></div>
 <div class="section"><h3>Family members</h3><div id="family-list" class="stack"></div></div>
+<div class="section"><h3>Children's savings goals</h3><div id="parent-goal-list"></div></div>
 <div class="section"><h3>Create a chore</h3><form id="chore-form"><label for="chore-title">Chore name</label><input id="chore-title" maxlength="80" placeholder="e.g. Make your bed" required><label for="chore-description">Description (optional)</label><textarea id="chore-description" maxlength="250" placeholder="What needs to be done?"></textarea><label for="chore-reward">Reward (MR)</label><input id="chore-reward" type="number" min="1" step="0.5" placeholder="e.g. 5" required><button class="primary" type="submit">Add chore</button></form><div id="chore-message" class="message"></div></div>
 <div class="section"><h3>Active chores</h3><div id="parent-chores"></div></div>
 <div class="section"><h3>Chore approvals</h3><p class="small muted">Review completed chores submitted by the children.</p><div id="approval-list"></div><div id="approval-message" class="message"></div></div>
@@ -96,17 +97,20 @@ async function loadProfile(user){
  if(profile.role==='parent')await loadParent();else await loadChild();
 }
 async function loadParent(){
- const [membersRes,choresRes,subsRes]=await Promise.all([
+ const [membersRes,choresRes,subsRes,goalsRes]=await Promise.all([
   db.from('family_members').select('id,display_name,role').eq('family_id',profile.family_id).order('display_name'),
   db.from('chores').select('id,title,description,reward,active').eq('family_id',profile.family_id).order('created_at',{ascending:false}),
-  db.from('chore_submissions').select('id,chore_id,member_id,status,submitted_at,reviewed_at').order('submitted_at',{ascending:false})
+  db.from('chore_submissions').select('id,chore_id,member_id,status,submitted_at,reviewed_at').order('submitted_at',{ascending:false}),
+  db.from('savings_goals').select('id,member_id,title,target_amount,created_at').order('created_at',{ascending:false})
  ]);
- if(membersRes.error)throw membersRes.error;if(choresRes.error)throw choresRes.error;if(subsRes.error)throw subsRes.error;
+ if(membersRes.error)throw membersRes.error;if(choresRes.error)throw choresRes.error;if(subsRes.error)throw subsRes.error;if(goalsRes.error)throw goalsRes.error;
  familyMembers=membersRes.data;const children=familyMembers.filter(m=>m.role==='child');const pending=subsRes.data.filter(s=>s.status==='pending');
  el('child-count').textContent=children.length;el('pending-count').textContent=pending.length;
  const walletRes=await db.from('wallet_transactions').select('member_id,amount,transaction_type').in('member_id',children.map(c=>c.id));
  if(walletRes.error)throw walletRes.error;
  el('family-list').innerHTML=children.map(c=>{const total=walletRes.data.filter(t=>t.member_id===c.id).reduce((a,t)=>a+(t.transaction_type==='credit'?Number(t.amount):-Number(t.amount)),0);return '<div class="item row"><div><strong>'+safe(c.display_name)+'</strong><div class="small muted">Child account</div></div><strong>'+money(total)+' MR</strong></div>'}).join('')||'<p class="empty">No child profiles found.</p>';
+ const childNames=new Map(children.map(m=>[m.id,m.display_name]));
+ el('parent-goal-list').innerHTML=goalsRes.data.filter(g=>childNames.has(g.member_id)).map(g=>'<div class="item"><div class="row"><strong>'+safe(childNames.get(g.member_id))+'</strong><span class="small muted">Savings goal</span></div><p>'+safe(g.title)+'</p><strong>Target: '+money(g.target_amount)+' MR</strong></div>').join('')||'<p class="empty">The children have not created any savings goals yet.</p>';
  const active=choresRes.data.filter(c=>c.active);
  el('parent-chores').innerHTML=active.map(c=>'<div class="item"><div class="row"><strong>'+safe(c.title)+'</strong><strong>'+money(c.reward)+' MR</strong></div><p class="small muted">'+safe(c.description||'No description')+'</p></div>').join('')||'<p class="empty">No active chores yet. Add the first chore above.</p>';
  const choreMap=new Map(choresRes.data.map(c=>[c.id,c.title]));const memberMap=new Map(familyMembers.map(m=>[m.id,m.display_name]));
