@@ -33,19 +33,16 @@ footer{text-align:center;color:#718076;font-size:12px;padding:15px}
 <section class="panel" id="login-panel">
 <span class="pill">FAMILY REWARDS • MR</span><h2>Welcome to your family bank</h2><p class="muted">Sign in to view your family rewards and savings space.</p>
 <div class="tabs"><button class="tab active" id="parent-tab" type="button">Parent</button><button class="tab" id="child-tab" type="button">Child</button></div>
-<form id="parent-form"><label for="parent-email">Parent email</label><input id="parent-email" type="email" autocomplete="username" placeholder="Enter parent email" required><label for="parent-password">Password</label><input id="parent-password" type="password" autocomplete="current-password" placeholder="Enter password" required><button class="primary" type="submit">Sign in as parent</button></form>
+<form id="parent-form"><label for="parent-email">Parent email</label><input id="parent-email" type="email" autocomplete="username" placeholder="Enter parent email" required><label for="parent-password">Password</label><input id="parent-password" type="password" autocomplete="current-password" placeholder="Enter password" required><button class="primary" type="submit">Sign in as parent</button><button class="secondary" id="forgot-password" type="button" style="width:100%;margin-top:9px">Forgot password?</button></form>
 <form id="child-form" hidden><label for="child-username">Child username</label><input id="child-username" autocomplete="username" placeholder="e.g. ditheto" autocapitalize="none" required><label for="child-pin">Six-digit PIN</label><input id="child-pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="current-password" placeholder="Enter six-digit PIN" required><p class="small muted">Your PIN is private. Do not share it.</p><button class="primary" type="submit">Sign in as child</button></form>
 <div id="login-message" class="message" role="status" aria-live="polite"></div>
 <div class="notice">MR are virtual family rewards, not real money. Child PINs currently act as account passwords; use trusted devices only.</div>
 </section>
 
-<section class="panel" id="dashboard" hidden>
-<div class="row"><span class="pill">MOTSWALA FAMILY BANK</span><button class="secondary" id="sign-out" type="button">Sign out</button></div>
-<div class="avatar" id="avatar">M</div><h2 id="welcome" style="text-align:center">Welcome</h2><p id="role-label" class="muted" style="text-align:center;margin-top:0"></p>
-<div id="parent-view" hidden>
-<div class="section">
-<h3>Set a new parent password</h3>
-<p class="small muted">Enter a new password and confirm it. This updates your Supabase account password.</p>
+<section class="panel" id="recovery-panel" hidden>
+<span class="pill">ACCOUNT RECOVERY</span>
+<h2>Choose a new parent password</h2>
+<p class="muted">Enter your new password below. After it is saved, you will return to the normal login screen.</p>
 <form id="password-form">
 <label for="new-parent-password">New password</label>
 <input id="new-parent-password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required>
@@ -54,7 +51,12 @@ footer{text-align:center;color:#718076;font-size:12px;padding:15px}
 <button class="primary" type="submit">Save new password</button>
 </form>
 <div id="password-message" class="message" role="status" aria-live="polite"></div>
-</div>
+</section>
+
+<section class="panel" id="dashboard" hidden>
+<div class="row"><span class="pill">MOTSWALA FAMILY BANK</span><button class="secondary" id="sign-out" type="button">Sign out</button></div>
+<div class="avatar" id="avatar">M</div><h2 id="welcome" style="text-align:center">Welcome</h2><p id="role-label" class="muted" style="text-align:center;margin-top:0"></p>
+<div id="parent-view" hidden>
 <div class="stats"><div class="stat"><strong id="child-count">0</strong><span>Children</span></div><div class="stat"><strong id="pending-count">0</strong><span>Pending approvals</span></div></div>
 <div class="section"><h3>Family members</h3><div id="family-list" class="stack"></div></div>
 <div class="section"><h3>Create a chore</h3><form id="chore-form"><label for="chore-title">Chore name</label><input id="chore-title" maxlength="80" placeholder="e.g. Make your bed" required><label for="chore-description">Description (optional)</label><textarea id="chore-description" maxlength="250" placeholder="What needs to be done?"></textarea><label for="chore-reward">Reward (MR)</label><input id="chore-reward" type="number" min="1" step="0.5" placeholder="e.g. 5" required><button class="primary" type="submit">Add chore</button></form><div id="chore-message" class="message"></div></div>
@@ -75,10 +77,10 @@ footer{text-align:center;color:#718076;font-size:12px;padding:15px}
 <script src="./config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
-const cfg=window.MOTSWALA_CONFIG, loginPanel=document.getElementById('login-panel'), dashboard=document.getElementById('dashboard');
+const cfg=window.MOTSWALA_CONFIG, loginPanel=document.getElementById('login-panel'), dashboard=document.getElementById('dashboard'), recoveryPanel=document.getElementById('recovery-panel');
 const parentForm=document.getElementById('parent-form'), childForm=document.getElementById('child-form'), loginMessage=document.getElementById('login-message');
 const childAccounts={mahlogonolo:'lehlalerwamj+mahlogonolo@gmail.com',ditheto:'lehlalerwamj+ditheto@gmail.com',rorisang:'lehlalerwamj+rorisang@gmail.com'};
-let db=null, profile=null, familyMembers=[];
+let db=null, profile=null, familyMembers=[], recoveryMode=false;
 const el=id=>document.getElementById(id);
 function msg(id,text,type){const e=el(id);e.textContent=text;e.className='message '+type}
 function money(n){return Number(n||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -145,8 +147,21 @@ el('password-form').addEventListener('submit',async e=>{
   const result=await db.auth.updateUser({password});
   if(result.error)throw result.error;
   el('password-form').reset();
-  msg('password-message','Your parent password has been updated successfully. Please keep it somewhere safe.','success');
+  await db.auth.signOut();
+  recoveryMode=false;profile=null;dashboard.hidden=true;recoveryPanel.hidden=true;loginPanel.hidden=false;parentForm.reset();childForm.reset();switchTab(true);
+  msg('login-message','Your parent password has been changed. Please sign in with your new password.','success');
  }catch(err){msg('password-message',err.message||'Could not update password.','error')}
+ finally{button.disabled=false}
+});
+el('forgot-password').addEventListener('click',async()=>{
+ const email=el('parent-email').value.trim();
+ if(!email){msg('login-message','Enter your parent email address first, then select Forgot password.','error');el('parent-email').focus();return}
+ const button=el('forgot-password');button.disabled=true;
+ try{
+  const result=await db.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+  if(result.error)throw result.error;
+  msg('login-message','Password recovery email requested. Check your inbox and open the newest link.','success');
+ }catch(err){msg('login-message',err.message||'Could not send recovery email.','error')}
  finally{button.disabled=false}
 });
 parentForm.addEventListener('submit',async e=>{e.preventDefault();busy(parentForm,true);try{const r=await db.auth.signInWithPassword({email:el('parent-email').value.trim(),password:el('parent-password').value});if(r.error)throw r.error;await loadProfile(r.data.user)}catch(err){msg('login-message',err.message||'Sign-in failed.','error')}finally{busy(parentForm,false)}});
@@ -154,7 +169,22 @@ childForm.addEventListener('submit',async e=>{e.preventDefault();const username=
 el('chore-form').addEventListener('submit',async e=>{e.preventDefault();const b=el('chore-form').querySelector('button');b.disabled=true;try{const r=await db.from('chores').insert({family_id:profile.family_id,title:el('chore-title').value.trim(),description:el('chore-description').value.trim(),reward:Number(el('chore-reward').value),active:true});if(r.error)throw r.error;el('chore-form').reset();msg('chore-message','Chore added successfully.','success');await loadParent()}catch(err){msg('chore-message',err.message||'Could not add chore.','error')}finally{b.disabled=false}});
 el('goal-form').addEventListener('submit',async e=>{e.preventDefault();const b=el('goal-form').querySelector('button');b.disabled=true;try{const r=await db.from('savings_goals').insert({member_id:profile.id,title:el('goal-title').value.trim(),target_amount:Number(el('goal-target').value)});if(r.error)throw r.error;el('goal-form').reset();msg('goal-message','Your savings goal has been created.','success');await loadChild()}catch(err){msg('goal-message',err.message||'Could not create savings goal.','error')}finally{b.disabled=false}});
 el('sign-out').addEventListener('click',async()=>{await db.auth.signOut();profile=null;dashboard.hidden=true;loginPanel.hidden=false;parentForm.reset();childForm.reset();switchTab(true)});
-async function start(){if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey||!window.supabase){msg('login-message','The Supabase connection could not load. Refresh the page.','error');return}db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);const s=await db.auth.getSession();if(s.data.session){try{await loadProfile(s.data.session.user)}catch(e){dashboard.hidden=true;loginPanel.hidden=false;msg('login-message',e.message,'error')}}}
+function showRecoveryScreen(){
+ recoveryMode=true;profile=null;loginPanel.hidden=true;dashboard.hidden=true;recoveryPanel.hidden=false;
+ msg('password-message','Recovery link verified. Choose your new password below.','success');
+}
+async function start(){
+ if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey||!window.supabase){msg('login-message','The Supabase connection could not load. Refresh the page.','error');return}
+ db=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
+ db.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY')showRecoveryScreen();
+ });
+ const s=await db.auth.getSession();
+ if(s.data.session&&!recoveryMode){
+  try{await loadProfile(s.data.session.user)}
+  catch(e){dashboard.hidden=true;loginPanel.hidden=false;msg('login-message',e.message,'error')}
+ }
+}
 start().catch(e=>msg('login-message',e.message||'Unable to start the app.','error'));
 })();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
