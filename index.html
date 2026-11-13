@@ -43,6 +43,18 @@ footer{text-align:center;color:#718076;font-size:12px;padding:15px}
 <div class="row"><span class="pill">MOTSWALA FAMILY BANK</span><button class="secondary" id="sign-out" type="button">Sign out</button></div>
 <div class="avatar" id="avatar">M</div><h2 id="welcome" style="text-align:center">Welcome</h2><p id="role-label" class="muted" style="text-align:center;margin-top:0"></p>
 <div id="parent-view" hidden>
+<div class="section">
+<h3>Set a new parent password</h3>
+<p class="small muted">Enter a new password and confirm it. This updates your Supabase account password.</p>
+<form id="password-form">
+<label for="new-parent-password">New password</label>
+<input id="new-parent-password" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required>
+<label for="confirm-parent-password">Confirm new password</label>
+<input id="confirm-parent-password" type="password" minlength="8" autocomplete="new-password" placeholder="Enter it again" required>
+<button class="primary" type="submit">Save new password</button>
+</form>
+<div id="password-message" class="message" role="status" aria-live="polite"></div>
+</div>
 <div class="stats"><div class="stat"><strong id="child-count">0</strong><span>Children</span></div><div class="stat"><strong id="pending-count">0</strong><span>Pending approvals</span></div></div>
 <div class="section"><h3>Family members</h3><div id="family-list" class="stack"></div></div>
 <div class="section"><h3>Create a chore</h3><form id="chore-form"><label for="chore-title">Chore name</label><input id="chore-title" maxlength="80" placeholder="e.g. Make your bed" required><label for="chore-description">Description (optional)</label><textarea id="chore-description" maxlength="250" placeholder="What needs to be done?"></textarea><label for="chore-reward">Reward (MR)</label><input id="chore-reward" type="number" min="1" step="0.5" placeholder="e.g. 5" required><button class="primary" type="submit">Add chore</button></form><div id="chore-message" class="message"></div></div>
@@ -122,6 +134,21 @@ async function loadChild(){
  el('transaction-list').innerHTML=txRes.data.slice(0,12).map(t=>'<div class="item row"><div><strong>'+safe(t.description||'Wallet transaction')+'</strong><div class="small muted">'+new Date(t.created_at).toLocaleDateString()+'</div></div><strong style="color:'+(t.transaction_type==='credit'?'#17613a':'#9b2520')+'">'+(t.transaction_type==='credit'?'+':'−')+money(t.amount)+' MR</strong></div>').join('')||'<p class="empty">No transactions yet. Approved rewards will appear here.</p>';
 }
 async function submitChore(choreId,button){button.disabled=true;try{const r=await db.from('chore_submissions').insert({chore_id:choreId,member_id:profile.id,status:'pending'});if(r.error)throw r.error;msg('child-chore-message','Your completed chore was submitted to the parent for approval.','success');await loadChild()}catch(e){msg('child-chore-message',e.message||'Could not submit chore.','error');button.disabled=false}}
+el('password-form').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const password=el('new-parent-password').value, confirmation=el('confirm-parent-password').value;
+ const button=el('password-form').querySelector('button[type="submit"]');
+ if(password.length<8){msg('password-message','Use a password with at least 8 characters.','error');return}
+ if(password!==confirmation){msg('password-message','The two passwords do not match.','error');return}
+ button.disabled=true;
+ try{
+  const result=await db.auth.updateUser({password});
+  if(result.error)throw result.error;
+  el('password-form').reset();
+  msg('password-message','Your parent password has been updated successfully. Please keep it somewhere safe.','success');
+ }catch(err){msg('password-message',err.message||'Could not update password.','error')}
+ finally{button.disabled=false}
+});
 parentForm.addEventListener('submit',async e=>{e.preventDefault();busy(parentForm,true);try{const r=await db.auth.signInWithPassword({email:el('parent-email').value.trim(),password:el('parent-password').value});if(r.error)throw r.error;await loadProfile(r.data.user)}catch(err){msg('login-message',err.message||'Sign-in failed.','error')}finally{busy(parentForm,false)}});
 childForm.addEventListener('submit',async e=>{e.preventDefault();const username=el('child-username').value.trim().toLowerCase(),pin=el('child-pin').value,email=childAccounts[username];if(!email){msg('login-message','Username not recognised. Check the spelling.','error');return}if(!/^[0-9]{6}$/.test(pin)){msg('login-message','Enter your six-digit PIN.','error');return}busy(childForm,true);try{const r=await db.auth.signInWithPassword({email,password:pin});if(r.error)throw r.error;await loadProfile(r.data.user)}catch(err){msg('login-message',err.message||'Sign-in failed.','error')}finally{el('child-pin').value='';busy(childForm,false)}});
 el('chore-form').addEventListener('submit',async e=>{e.preventDefault();const b=el('chore-form').querySelector('button');b.disabled=true;try{const r=await db.from('chores').insert({family_id:profile.family_id,title:el('chore-title').value.trim(),description:el('chore-description').value.trim(),reward:Number(el('chore-reward').value),active:true});if(r.error)throw r.error;el('chore-form').reset();msg('chore-message','Chore added successfully.','success');await loadParent()}catch(err){msg('chore-message',err.message||'Could not add chore.','error')}finally{b.disabled=false}});
